@@ -1,0 +1,268 @@
+# helm upgrade --install jupyterhub --repo=https://hub.jupyter.org/helm-chart/ jupyterhub -f jupyterhub.yaml --wait
+
+
+hub:
+  config:
+    JupyterHub:
+      default_url: /jupyter/hub/home
+      load_groups:
+        egress-admins:
+          users:
+            - egress
+    Authenticator:
+      admin_users:
+        - admin
+      allowed_users:
+        - egress
+        - user-1
+        - user-2
+    KubeSpawner:
+      # http_timeout: 60
+      # Allow routing by hostname
+      services_enabled: true
+      # We're using a single PVC with subpaths, but KubeSpawner incorrectly deletes it
+      # if you delete a user
+      # https://github.com/jupyterhub/kubespawner/issues/880
+      delete_pvc: False
+      extra_pod_config:
+        dnsPolicy: None
+        dnsConfig:
+          nameservers:
+            # This is set in the CoreDNS Helm deployment (see coredns.yaml)
+            - 10.43.0.11
+          searches:
+            - default.svc.cluster.local
+            - svc.cluster.local
+            - cluster.local
+          options:
+            - name: ndots
+              value: "2"
+  db:
+    pvc:
+      storageClassName: nfs
+  baseUrl: /jupyter
+
+  extraConfig:
+    10-modify-pod: |
+      def modify_pod_hook(spawner, pod):
+          # First container is static-redirector, move user volume to user container
+          pod.spec.containers[1].volume_mounts = pod.spec.containers[0].volume_mounts
+          pod.spec.containers[0].volume_mounts = None
+
+          # Move lifecycle hook to user container
+          pod.spec.containers[1].lifecycle = pod.spec.containers[0].lifecycle
+          pod.spec.containers[0].lifecycle = None
+
+          # Change the start command in the desktop container depending on profile
+          chosen_profile = spawner.user_options.get("profile", "")
+          if chosen_profile == "vnc":
+              pod.spec.containers[1].command = ["start-tigervnc.sh"]
+          elif chosen_profile == "rdp":
+              pod.spec.containers[1].command = ["start-xrdp.sh"]
+          else:
+              raise ValueError(f"Invalid profile: {chosen_profile}")
+          spawner.log.info(f"{chosen_profile=} {pod.spec.containers[1].command=}")
+          return pod
+      c.KubeSpawner.modify_pod_hook = modify_pod_hook
+    11-add-service-port: |
+      from kubespawner import KubeSpawner
+      from kubernetes_asyncio.client.models import V1ServicePort
+      from traitlets import Unicode
+
+      class KubeSpawnerGuac(KubeSpawner):
+          connection = Unicode("")
+
+          def load_state(self, state):
+              super().load_state(state)
+              self.log.info(f"{state=}")
+              state_connection = state.get("connection")
+              if state_connection:
+                  if self.connection and self.connection != state_connection:
+                      self.log.error(f"Mismatch: {self.connection=} {state_connection=}, not updating")
+                  else:
+                      self.connection = state_connection
+
+          def get_state(self):
+              state = super().get_state()
+              if self.connection:
+                  state["connection"] = self.connection
+              self.log.info(f"{state=}")
+              return state
+
+          def get_service_manifest(self, owner_reference):
+              service = super().get_service_manifest(owner_reference)
+              service.spec.ports.append(V1ServicePort(name='rdp', port=3389, target_port=3389))
+              service.spec.ports.append(V1ServicePort(name='vnc', port=5901, target_port=5901))
+              return service
+
+      c.JupyterHub.spawner_class = KubeSpawnerGuac
+
+  services:
+    guacamole:
+      url: http://guacamolehandler:8040
+      # this allows us to get the user's username
+      oauth_client_allowed_scopes:
+        - "read:users!user"
+      # We subsequently need to use the services own API token to get privileged
+      # information about the server (see loadRoles)
+      api_token: guacamole-fedcba9876543210fedcba9876543210
+      oauth_no_confirm : true
+    airlock:
+      url: http://airlock:8041
+      # this allows us to get the user's username
+      oauth_client_allowed_scopes:
+        - "read:users!user"
+      # Not used for requests, but acts as client-secret
+      api_token: airlock-fedcba9876543210fedcba9876543210
+      oauth_no_confirm : true
+
+  loadRoles:
+    # grant all users access to all services
+    user:
+      scopes:
+        - "access:services"
+        - "self"
+    # Allow the guacamole-handler service to access detailed server info
+    guacamole-handler:
+      scopes:
+        - "read:servers"
+        - "admin:server_state"
+      services:
+        - guacamole
+    # airlock:
+    #   scopes:
+    #   services:
+    #     - airlock
+
+  # containerSecurityContext:
+  #   runAsUser: 0
+  #   runAsNonRoot: false
+  # args:
+  #   - sh
+  #   - -c
+  #   - while true; do jupyterhub --config /usr/local/etc/jupyterhub/jupyterhub_config.py; done
+
+
+singleuser:
+  storage:
+    dynamic:
+      storageClass: nfs
+      pvcNameTemplate: claim-jupyter
+      subPath: "{user_server}"
+    homeMountPath: /home/ubuntu
+
+  image:
+    # name: docker.io/manics/jupyter-static-redirector
+    # tag: latest
+    name: ghcr.io/manics/jupyterhub-singleuser-static-redirector
+    tag: main
+    pullPolicy: Always
+  # Use default entrypoint
+  cmd:
+  cloudMetadata:
+    blockWithIptables: false
+  extraEnv:
+    STATIC_REDIRECTOR_DESTINATION: http://penguin.example.org/jupyter/services/guacamole/
+  extraContainers:
+    - name: ubuntu-mate
+      image: ghcr.io/manics/ubuntu-mate-vncrdp:main
+      command:
+        - start-xrdp.sh
+      ports:
+        - containerPort: 3389
+          name: rdp
+          protocol: TCP
+        - containerPort: 5901
+          name: vnc
+          protocol: TCP
+      env: []
+      # readinessProbe:
+      #   tcpSocket:
+      #     port: 3389
+      #   initialDelaySeconds: 15
+      #   periodSeconds: 10
+      # livenessProbe:
+      #   tcpSocket:
+      #     port: 3389
+      #   initialDelaySeconds: 15
+      #   periodSeconds: 10
+
+  # startTimeout: 300
+  # Use the default UID from the image
+  uid:
+  networkPolicy:
+    egressAllowRules:
+      dnsPortsCloudMetadataServer: false
+      dnsPortsKubeSystemNamespace: false
+      dnsPortsPrivateIPs: false
+      nonPrivateIPs: false
+      privateIPs: false
+    egress:
+      - to:
+          - podSelector:
+              matchLabels:
+                user-pod-dns: "true"
+                app.kubernetes.io/instance: coredns
+                app.kubernetes.io/name: coredns
+        ports:
+          - protocol: UDP
+            port: 53
+
+    # Allow ingress from guacd
+    ingress:
+      - from:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/component: guacd
+                app.kubernetes.io/name: guacamole
+      - ports:
+          - port: 3389
+            protocol: TCP
+          - port: 5901
+            protocol: TCP
+
+  # Testing additional connection metadata
+  profileList:
+    - display_name: "RDP"
+      description: "RDP connection"
+      kubespawner_override:
+        connection: "rdp"
+      # Defines the default profile - only use for one profile
+      default: true
+    - display_name: "VNC"
+      description: "VNC connection"
+      kubespawner_override:
+        connection: "vnc"
+
+  lifecycleHooks:
+    postStart:
+      exec:
+        command: ["sh", "-c", "mkdir -p ~/egress"]
+
+
+proxy:
+  service:
+    type: ClusterIP
+    # type: NodePort
+    # nodePorts:
+    #   http: 32080
+
+ingress:
+  enabled: true
+  # pathType: ImplementationSpecific
+  # pathSuffix: "*"
+  hosts:
+    - penguin.example.org
+
+scheduling:
+  userScheduler:
+    enabled: false
+
+debug:
+  enabled: true
+
+prePuller:
+  extraImages:
+    ubuntu-mate-vnc:
+      name: ghcr.io/manics/ubuntu-mate-vncrdp
+      tag: main

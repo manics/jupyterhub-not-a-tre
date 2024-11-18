@@ -1,0 +1,7 @@
+# helm upgrade --install nfs --repo=https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner/ nfs-server-provisioner -f nfs-ganesha.yaml
+
+# Requires mount.nfs (apt install nfs-common)
+
+persistence:
+  enabled: true
+

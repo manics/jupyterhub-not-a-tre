@@ -1,0 +1,16 @@
+# helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-guacamole/ guacamole guacamole -f guacamole.yaml --wait
+
+guacamole:
+  secretEnv:
+    JSON_SECRET_KEY: 0123456789abcdef0123456789abcdef
+
+# guacd:
+#   podLabels:
+#     # Allow access to Z2JH singleuser pods
+#     hub.jupyter.org/network-access-singleuser: "true"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: penguin.example.org
+      pathType: ImplementationSpecific

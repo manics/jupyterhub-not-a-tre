@@ -1,0 +1,49 @@
+
+# helm upgrade --install --repo=https://coredns.github.io/helm/ coredns coredns -f coredns.yaml --wait
+
+# https://github.com/coredns/helm
+# http://kevinbreit.net/posts/coredns-helm/
+
+isClusterService: false
+
+serviceAccount:
+  create: true
+
+servers:
+  - zones:
+      - zone: .
+
+    port: 53
+    # hostPort: 53
+    plugins:
+      # https://coredns.io/plugins/kubernetes/
+      - name: kubernetes
+        parameters: cluster.local in-addr.arpa ip6.arpa
+        # Only provide DNS for the default namespace
+        configBlock: |-
+          namespaces default
+          pods insecure
+          ttl 0
+      - name: errors
+      # Serves a /health endpoint on :8080, required for livenessProbe
+      - name: health
+        configBlock: |-
+          lameduck 5s
+      # Serves a /ready endpoint on :8181, required for readinessProbe
+      - name: ready
+      # Serves a /metrics endpoint on :9153, required for serviceMonitor
+      - name: prometheus
+        parameters: 0.0.0.0:9153
+      - name: cache
+        parameters: 30
+      - name: loop
+      - name: reload
+      - name: loadbalance
+
+service:
+  # Needs to be in the K8s service CIDR, for K3s this is 10.43.0.0/16
+  clusterIP: 10.43.0.11
+
+customLabels:
+  # This allows us to add a network policy to user pods to limit port 53
+  user-pod-dns: "true"

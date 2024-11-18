@@ -1,0 +1,49 @@
+# helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-generic-webservice/ guacamolehandler generic-webservice -f guacamolehandler.yaml --wait
+
+image:
+  repository: ghcr.io/manics/jupyterhub-guacamole-handler
+  tag: dev
+  # repository: docker.io/manics/jupyterhub-guacamole-handler
+  pullPolicy: Always
+
+command:
+  - python
+  - /opt/guacamole_handler/guacamole_handler.py
+
+args:
+  - --log-level=debug
+
+service:
+  port: 8040
+
+env:
+  - name: JSON_SECRET_KEY
+    value: 0123456789abcdef0123456789abcdef
+  - name: GUACAMOLE_HOST
+    value: "http://guacamole:8080"
+  - name: GUACAMOLE_PUBLIC_HOST
+    value: "http://penguin.example.org"
+  - name: JUPYTERHUB_API_TOKEN
+    value: guacamole-fedcba9876543210fedcba9876543210
+  - name: JUPYTERHUB_API_URL
+    value: http://hub:8081/jupyter/hub/api
+  - name: JUPYTERHUB_BASE_URL
+    value: /jupyter
+  - name: JUPYTERHUB_CLIENT_ID
+    value: service-guacamole
+  - name: JUPYTERHUB_SERVICE_PREFIX
+    value: /jupyter/services/guacamole
+  # - name: JUPYTERHUB_SERVICE_NAME
+  #   value: guacamole
+
+nameOverride: guacamolehandler
+
+livenessProbe:
+  httpGet:
+    path: /health
+readinessProbe:
+  httpGet:
+    path: /health
+
+podLabels:
+  hub.jupyter.org/network-access-hub: "true"
