@@ -91,7 +91,7 @@ helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-generic
 Create an NFS volume for user home directories using the NFS provisioner
 
 ```
-kubectl create -f user-home-directories-pvc.yaml
+kubectl apply -f user-home-directories-pvc.yaml
 ```
 
 Deploy JupyterHub Airlock which provides a basic interface to requested outputs
