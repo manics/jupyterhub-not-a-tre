@@ -54,6 +54,11 @@ If you change this you will need to modify `namespaces default` in `coredns.yaml
 
 If you want to install different components in different namespaces everything will break without updating network hostnames.
 
+### MicroK8s
+
+To use [MicroK8s](https://microk8s.io/docs/getting-started) the `hostpath-storage` and `ingress` addons must be installed.
+You must modify the `service.clusterIP` in `coredns.yaml` since the MicroK8s CIDR is different.
+
 ## Helm Deployment
 
 This assumes everything is done in the `default` namespace, and that the default Traefik ingress setup by K3s is running.
@@ -68,7 +73,7 @@ helm upgrade --install nfs --repo=https://kubernetes-sigs.github.io/nfs-ganesha-
 Deploy a local CoreDNS server just for user pods.
 
 ```
-helm upgrade --install --repo=https://coredns.github.io/helm/ coredns coredns -f coredns.yaml --wait
+helm upgrade --install coredns-restricted --repo=https://coredns.github.io/helm/ coredns -f coredns.yaml --wait
 ```
 
 Deploy Apache Guacamole to provide the virtual desktop interface to user pods.
@@ -137,3 +142,4 @@ This is very much a work in progress!
 - [ ] Has not been tested for security!
 - [ ] K3s network policies are not complete, should probably replace with Calico
 - [ ] API tokens are insecure
+- [ ] Workspaces connections are protected by network rules, not passwords

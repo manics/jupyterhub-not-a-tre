@@ -204,7 +204,7 @@ singleuser:
           - podSelector:
               matchLabels:
                 user-pod-dns: "true"
-                app.kubernetes.io/instance: coredns
+                app.kubernetes.io/instance: coredns-restricted
                 app.kubernetes.io/name: coredns
         ports:
           - protocol: UDP

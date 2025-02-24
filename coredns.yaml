@@ -42,6 +42,8 @@ servers:
 service:
   # Needs to be in the K8s service CIDR, for K3s this is 10.43.0.0/16
   clusterIP: 10.43.0.11
+  # For MicroK8s this is 10.152.183.0/16
+  # clusterIP: 10.152.183.11
 
 customLabels:
   # This allows us to add a network policy to user pods to limit port 53
