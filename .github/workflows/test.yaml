@@ -1,0 +1,99 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - uses: pre-commit/action@v3.0.1
+
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # https://github.com/jupyterhub/action-k3s-helm/
+      - uses: jupyterhub/action-k3s-helm@v4
+        with:
+          k3s-channel: v1.31
+
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version: "3.10"
+      #     cache: pip
+      #     cache-dependency-path: dev-requirements.txt
+
+      # - name: Cache Playwright browsers
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.cache/ms-playwright
+      #     # If playwright version is bumped then refresh browsers
+      #     key: ${{ runner.os }}-playwright-${{ hashFiles('dev-requirements.txt') }}
+
+      # - name: Install dependencies
+      #   run: |
+      #     pip install -r dev-requirements.txt
+      #     playwright install firefox
+
+      - name: Set k8s ingress address
+        run: |
+          # Needs to resolve inside and outside the cluster
+          K8S_HOSTNAME=$(hostname -I | awk '{print $1}').nip.io
+          sed -i -re "s/penguin.example.org/$K8S_HOSTNAME/" *.yaml
+          git diff
+
+      - name: Install deployment
+        run: |
+          ./ci/run_codeblocks.py README.md --run
+
+      # - name: Run tests
+      #   run: |
+      #     cd ${{ matrix.test }}
+      #     pytest --browser firefox --base-url "http://$K8S_HOSTNAME"
+
+      - name: Get logs, including on failure
+        if: always()
+        run: |
+          for name in $(kubectl get statefulset --output=jsonpath="{.items[*]['metadata.name']}"); do
+            echo "::group::${name}"
+            kubectl logs statefulset/$name
+            echo "::endgroup::"
+          done
+
+          for name in $(kubectl get deploy --output=jsonpath="{.items[*]['metadata.name']}"); do
+            echo "::group::${name}"
+            kubectl logs deploy/$name
+            echo "::endgroup::"
+          done
+
+  # Set a single status check for the whole workflow, so that we can use it in a
+  # branch protection rule
+  status-check:
+    runs-on: ubuntu-24.04
+    needs:
+      - pre-commit
+      - test
+    if: always()
+    steps:
+      - name: Get job statuses
+        uses: technote-space/workflow-conclusion-action@v3.0.3
+        with:
+          FALLBACK_CONCLUSION: failure
+          STRICT_SUCCESS: true
+        # Status is saved in env.WORKFLOW_CONCLUSION
+
+      - name: Status check
+        if: env.WORKFLOW_CONCLUSION != 'success'
+        run: |
+          exit 1
