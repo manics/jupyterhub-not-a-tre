@@ -46,7 +46,7 @@ Deploy an NFS server. This will provide shared storage for user pods.
 NFS is needed so that multiple services such as the airlock can access the same storage.
 
 ```
-helm upgrade --install nfs --repo=https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner/ nfs-server-provisioner -f nfs-ganesha.yaml
+helm upgrade --install nfs --repo=https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner/ nfs-server-provisioner -f nfs-ganesha.yaml --wait
 ```
 
 Deploy a local CoreDNS server just for user pods.
@@ -65,6 +65,11 @@ Deploy the JupyterHub Guacamole handler which allows JupyterHub to create Guacam
 
 ```
 helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-generic-webservice/ guacamolehandler generic-webservice -f guacamolehandler.yaml --wait
+```
+
+Create an NFS volume for user home directories using the NFS provisioner
+```
+kubectl create -f user-home-directories-pvc.yaml
 ```
 
 Deploy JupyterHub Airlock which provides a basic interface to requested outputs

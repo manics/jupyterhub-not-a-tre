@@ -145,9 +145,13 @@ hub:
 
 singleuser:
   storage:
-    dynamic:
-      storageClass: nfs
-      pvcNameTemplate: claim-jupyter
+    type: static
+    # dynamic:
+    #   storageClass: nfs
+    #   pvcNameTemplate: claim-jupyter
+    #   subPath: "{user_server}"
+    static:
+      pvcName: user-home-directories
       subPath: "{user_server}"
     homeMountPath: /home/ubuntu
 

@@ -48,7 +48,7 @@ volumes:
   # Mount the JupyterHub shared NFS directory so we can access user egress directories
   - name: user-storage
     persistentVolumeClaim:
-      claimName: claim-jupyter
+      claimName: user-home-directories
 
 volumeMounts:
   - name: user-storage
