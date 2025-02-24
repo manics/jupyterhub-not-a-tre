@@ -258,6 +258,8 @@ ingress:
 scheduling:
   userScheduler:
     enabled: false
+  userPlaceholder:
+    enabled: false
 
 debug:
   enabled: true
