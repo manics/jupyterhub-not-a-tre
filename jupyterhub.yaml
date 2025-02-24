@@ -1,6 +1,5 @@
 # helm upgrade --install jupyterhub --repo=https://hub.jupyter.org/helm-chart/ jupyterhub -f jupyterhub.yaml --wait
 
-
 hub:
   config:
     JupyterHub:
@@ -106,7 +105,7 @@ hub:
       # We subsequently need to use the services own API token to get privileged
       # information about the server (see loadRoles)
       api_token: guacamole-fedcba9876543210fedcba9876543210
-      oauth_no_confirm : true
+      oauth_no_confirm: true
     airlock:
       url: http://airlock:8041
       # this allows us to get the user's username
@@ -114,7 +113,7 @@ hub:
         - "read:users!user"
       # Not used for requests, but acts as client-secret
       api_token: airlock-fedcba9876543210fedcba9876543210
-      oauth_no_confirm : true
+      oauth_no_confirm: true
 
   loadRoles:
     # grant all users access to all services
@@ -141,7 +140,6 @@ hub:
   #   - sh
   #   - -c
   #   - while true; do jupyterhub --config /usr/local/etc/jupyterhub/jupyterhub_config.py; done
-
 
 singleuser:
   storage:
@@ -242,7 +240,6 @@ singleuser:
     postStart:
       exec:
         command: ["sh", "-c", "mkdir -p ~/egress"]
-
 
 proxy:
   service:

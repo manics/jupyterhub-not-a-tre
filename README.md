@@ -1,19 +1,22 @@
 # Investigation into a Z2JH TRE
 
-
 ## Prerequisites
 
 ### Kubernetes, Helm, Host system
+
 This is only tested with a [default K3s Kubernetes installation](https://docs.k3s.io/quick-start) that includes a default Traefik ingress and local storage provisioner.
 Change the file permissions on `/etc/rancher/k3s/k3s.yaml` if needed so that
+
 ```
 kubectl get nodes
 ```
+
 works.
 
 You must also [install Helm](https://helm.sh/docs/intro/install/).
 
 Your host system must support mounting NFS (the executable `mount.nfs` should exist):
+
 ```
 sudo apt update -y -q
 sudo apt install -y -q nfs-common
@@ -24,6 +27,7 @@ sudo apt install -y -q nfs-common
 You must change the ingress hosts before deploying.
 
 Do a global search and replace in all files to replace `penguin.example.org` with your hostname. If you only have an IP use `ip1.ip2.ip3.ip4.nip.io`:
+
 - `guacamole.yaml`
 - `guacamolehandler.yaml`
 - `jupyterhub.yaml`
@@ -39,6 +43,7 @@ Since the IP of this DNS server must be used to be configure the pods you should
 
 It is currently set to `10.43.0.11`, corresponding to the start of the default K3s service CIDR.
 If necessary do a global search and replace in all files, changing `10.43.0.11` to whatever your chosen DNS clusterIP is.
+
 - `coredns.yaml`
 - `jupyterhub.yaml`
 
@@ -79,6 +84,7 @@ helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-generic
 ```
 
 Create an NFS volume for user home directories using the NFS provisioner
+
 ```
 kubectl create -f user-home-directories-pvc.yaml
 ```
@@ -95,11 +101,11 @@ Deploy JupyterHub
 helm upgrade --install jupyterhub --repo=https://hub.jupyter.org/helm-chart/ jupyterhub -f jupyterhub.yaml --wait
 ```
 
-
 ## Login
 
 If this is working you should be able to go to `http://ingress-hostname/jupyter/`.
 Four accounts are setup, no passwords are required (just enter the username and hit `<ENTER>`):
+
 - `admin`: A JupyterHub administrator
 - `egress`: An egress (airlock) administrator
 - `user-1`: A normal user
