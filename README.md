@@ -2,7 +2,24 @@
 
 
 ## Prerequisites
-This is only tested with a default K3s Kubernetes installation (with the default Traefik ingress and local storage provisioner).
+
+### Kubernetes, Helm, Host system
+This is only tested with a [default K3s Kubernetes installation](https://docs.k3s.io/quick-start) that includes a default Traefik ingress and local storage provisioner.
+Change the file permissions on `/etc/rancher/k3s/k3s.yaml` if needed so that
+```
+kubectl get nodes
+```
+works.
+
+You must also [install Helm](https://helm.sh/docs/intro/install/).
+
+Your host system must support mounting NFS (the executable `mount.nfs` should exist):
+```
+sudo apt update -y -q
+sudo apt install -y -q nfs-common
+```
+
+### Mandatory configuration
 
 You must change the ingress hosts before deploying.
 
@@ -10,12 +27,6 @@ Do a global search and replace in all files to replace `penguin.example.org` wit
 - `guacamole.yaml`
 - `guacamolehandler.yaml`
 - `jupyterhub.yaml`
-
-Your host system must support mounting NFS (the executable `mount.nfs` should exist):
-```
-apt update
-apt install nfs-common
-```
 
 ## Optional configuration
 
@@ -94,20 +105,19 @@ Four accounts are setup, no passwords are required (just enter the username and 
 - `user-1`: A normal user
 - `user-2`: A normal user
 
-Login as `user-1`, start a server.
+Login as `user-1`, start a server- choose RDP or VNC to compare the interfaces.
 Follow the links to connect to Guacamole.
-You should have an egress folder.
-Start a terminal and create a file, eg:
-```
-echo hello > ~/egress/hello.txt
-```
 
-Now go to `http://ingress-hostname/airlock/`.
+You should have a full Ubuntu MATE desktop.
+For example, double click on the JupyterLab icon to launch JupyterLab in a browser on the desktop.
+Create a file in the `~/egress` folder, either through JupyterLab, or in a terminal: `echo hello > ~/egress/hello.txt`.
+
+Now go to `http://ingress-hostname/jupyter/services/airlock/`.
 Click on `New egress`, select the file(s) to egress, and submit.
 
 Go back to `http://ingress-hostname/jupyter/` and logout.
 
-Login as user `egress` and go to `http://ingress-hostname/airlock/`.
+Login as user `egress` and go to `http://ingress-hostname/jupyter/services/airlock/`.
 You should see all egresses, and you can click on an egress to accept or reject it.
 If you accept it should should be able to log back in as `user-1` and be able to download it.
 
