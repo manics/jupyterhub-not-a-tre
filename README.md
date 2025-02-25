@@ -116,7 +116,7 @@ Four accounts are setup, no passwords are required (just enter the username and 
 - `user-1`: A normal user
 - `user-2`: A normal user
 
-Login as `user-1`, start a server- choose RDP or VNC to compare the interfaces.
+Login as `user-1`, start a server in your chosen project.
 Follow the links to connect to Guacamole.
 
 You should have a full Ubuntu MATE desktop.
@@ -140,6 +140,8 @@ This is very much a work in progress!
 - [ ] Airlock/egress doesn't have a separate API
 - [ ] Has not been tested for security!
 - [ ] K3s network policies are not complete, should probably replace with Calico
-- [ ] API tokens are insecure
+- [ ] API tokens are insecure and are hardcoded in the example configuration
 - [ ] Workspaces connections are protected by network rules, not passwords
 - [ ] User home and egress directories are not segregated by project
+- [ ] A user can only run one workspace in one project at a time
+- [ ] Helm chart and containers versions are not pinned
