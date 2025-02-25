@@ -88,10 +88,11 @@ Deploy the JupyterHub Guacamole handler which allows JupyterHub to create Guacam
 helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-generic-webservice/ guacamolehandler generic-webservice -f guacamolehandler.yaml --wait
 ```
 
-Create an NFS volume for user home directories using the NFS provisioner
+Create an NFS volume for user home and project directories using the NFS provisioner
 
 ```
 kubectl apply -f user-home-directories-pvc.yaml
+kubectl apply -f project-directories-pvc.yaml
 ```
 
 Deploy JupyterHub Airlock which provides a basic interface to requested outputs
@@ -138,8 +139,8 @@ This is very much a work in progress!
 
 - [ ] Airlock/egress interface is extremely basic
 - [ ] Airlock/egress doesn't have a separate API
-- [ ] Egress admin can't see the requested files
 - [ ] Has not been tested for security!
 - [ ] K3s network policies are not complete, should probably replace with Calico
 - [ ] API tokens are insecure
 - [ ] Workspaces connections are protected by network rules, not passwords
+- [ ] User home and egress directories are not segregated by project

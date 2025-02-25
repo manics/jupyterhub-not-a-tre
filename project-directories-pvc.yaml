@@ -1,0 +1,12 @@
+# A shared volume for user home directories
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: project-directories
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi

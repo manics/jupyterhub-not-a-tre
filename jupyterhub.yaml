@@ -8,6 +8,13 @@ hub:
         egress-admins:
           users:
             - egress
+        project-1:
+          users:
+            - user-1
+        project-2:
+          users:
+            - user-1
+            - user-2
     Authenticator:
       admin_users:
         - admin
@@ -52,17 +59,18 @@ hub:
           pod.spec.containers[1].lifecycle = pod.spec.containers[0].lifecycle
           pod.spec.containers[0].lifecycle = None
 
-          # Change the start command in the desktop container depending on profile
           chosen_profile = spawner.user_options.get("profile", "")
-          if chosen_profile == "vnc":
-              pod.spec.containers[1].command = ["start-tigervnc.sh"]
-          elif chosen_profile == "rdp":
-              pod.spec.containers[1].command = ["start-xrdp.sh"]
-          else:
-              raise ValueError(f"Invalid profile: {chosen_profile}")
+          # if chosen_profile == "vnc":
+          #     pod.spec.containers[1].command = ["start-tigervnc.sh"]
+          # elif chosen_profile == "rdp":
+          #     pod.spec.containers[1].command = ["start-xrdp.sh"]
+          # else:
+          #     raise ValueError(f"Invalid profile: {chosen_profile}")
+          pod.spec.containers[1].command = ["start-xrdp.sh"]
           spawner.log.info(f"{chosen_profile=} {pod.spec.containers[1].command=}")
           return pod
       c.KubeSpawner.modify_pod_hook = modify_pod_hook
+
     11-add-service-port: |
       from kubespawner import KubeSpawner
       from kubernetes_asyncio.client.models import V1ServicePort
@@ -95,6 +103,105 @@ hub:
               return service
 
       c.JupyterHub.spawner_class = KubeSpawnerGuac
+
+    12-user-group-options-form: |
+      import re
+
+      project_group_re = r"^project-[a-z0-9-]+$"
+      egress_admin_groupname = "egress-admins"
+      user_home_pvcname = "user-home-directories"
+      project_pvcname = "project-directories"
+      egress_pvcname = "airlock"
+
+      # https://discourse.jupyter.org/t/tailoring-spawn-options-and-server-configuration-to-certain-users/8449
+      async def custom_options_form(spawner):
+
+          spawner.profile_list = []
+          username = spawner.user.name
+
+          for group in spawner.user.groups:
+              groupname = group.name
+              if re.match(project_group_re, groupname):
+                  spawner.log.info(f"Adding {groupname} project storage for {username}.")
+                  spawner.profile_list.append({
+                      "display_name": groupname,
+                      "slug": groupname,
+                      "kubespawner_override": {
+                          "connection": "rdp",
+                          "volumes": {
+                              "home": {
+                                  "name": "home",
+                                  "persistentVolumeClaim": {
+                                      "claimName": user_home_pvcname,
+                                  }
+                              },
+                              "project": {
+                                  "name": "project",
+                                  "persistentVolumeClaim": {
+                                      "claimName": project_pvcname,
+                                  }
+                              },
+                          },
+                          "volume_mounts": {
+                              "home": {
+                                  "name": "home",
+                                  "mountPath": f"/home/ubuntu",
+                                  "subPath": username,
+                              },
+                              "project": {
+                                  "name": "project",
+                                  "mountPath": f"/home/ubuntu/project",
+                                  "subPath": groupname,
+                              },
+                          },
+                      },
+                  })
+
+              if groupname == egress_admin_groupname:
+                  spawner.log.info(f"Adding {groupname} readonly storage for {username}.")
+                  spawner.profile_list.append({
+                      "display_name": groupname,
+                      "slug": groupname,
+                      "kubespawner_override": {
+                          "connection": "rdp",
+                          "volumes": {
+                              "home": {
+                                  "name": "home",
+                                  "persistentVolumeClaim": {
+                                      "claimName": user_home_pvcname,
+                                  }
+                              },
+                              "egress-review": {
+                                  "name": "egress-review",
+                                  "persistentVolumeClaim": {
+                                      "claimName": egress_pvcname,
+                                  }
+                              },
+                          },
+                          "volume_mounts": {
+                              "home": {
+                                  "name": "home",
+                                  "mountPath": f"/home/ubuntu",
+                                  "subPath": username,
+                              },
+                              "egress-review": {
+                                  "name": "egress-review",
+                                  "mountPath": f"/home/ubuntu/egress-review",
+                                  "readOnly": True,
+                              },
+                          },
+                      },
+                  })
+
+          # Let KubeSpawner inspect profile_list and decide what to return, it
+          # will return a falsy blank string if there is no profile_list,
+          # which makes no options form be presented.
+          #
+          # ref: https://github.com/jupyterhub/kubespawner/blob/37a80abb0a6c826e5c118a068fa1cf2725738038/kubespawner/spawner.py#L1885-L1935
+          return spawner._options_form_default()
+
+      # Don't forget to ask KubeSpawner to make use of this custom hook
+      c.KubeSpawner.options_form = custom_options_form
 
   services:
     guacamole:
@@ -143,19 +250,18 @@ hub:
 
 singleuser:
   storage:
-    type: static
+    # Everything is done dynamically in the profile handling
+    type: none
     # dynamic:
     #   storageClass: nfs
     #   pvcNameTemplate: claim-jupyter
     #   subPath: "{user_server}"
-    static:
-      pvcName: user-home-directories
-      subPath: "{user_server}"
-    homeMountPath: /home/ubuntu
+    # static:
+    #   pvcName: user-home-directories
+    #   subPath: "{user_server}"
+    # homeMountPath: /home/ubuntu
 
   image:
-    # name: docker.io/manics/jupyter-static-redirector
-    # tag: latest
     name: ghcr.io/manics/jupyterhub-singleuser-static-redirector
     tag: main
     pullPolicy: Always
@@ -224,17 +330,17 @@ singleuser:
             protocol: TCP
 
   # Testing additional connection metadata
-  profileList:
-    - display_name: "RDP"
-      description: "RDP connection"
-      kubespawner_override:
-        connection: "rdp"
-      # Defines the default profile - only use for one profile
-      default: true
-    - display_name: "VNC"
-      description: "VNC connection"
-      kubespawner_override:
-        connection: "vnc"
+  # profileList:
+  #   - display_name: "RDP"
+  #     description: "RDP connection"
+  #     kubespawner_override:
+  #       connection: "rdp"
+  #     # Defines the default profile - only use for one profile
+  #     default: true
+  #   - display_name: "VNC"
+  #     description: "VNC connection"
+  #     kubespawner_override:
+  #       connection: "vnc"
 
   lifecycleHooks:
     postStart:
