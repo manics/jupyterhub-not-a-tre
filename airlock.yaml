@@ -38,21 +38,27 @@ readinessProbe:
   httpGet:
     path: /health
 
-pvc:
-  create: true
-  storageClassName: nfs
-  storage: 2Gi
-  mountPath: /egress
+# pvc:
+#   create: true
+#   storageClassName: nfs
+#   storage: 2Gi
+#   mountPath: /egress
 
 volumes:
   # Mount the JupyterHub shared NFS directory so we can access user egress directories
   - name: user-storage
     persistentVolumeClaim:
-      claimName: user-home-directories
+      claimName: user-egress-directories
+
+  - name: egress-storage
+    persistentVolumeClaim:
+      claimName: airlock-egress-directories
 
 volumeMounts:
   - name: user-storage
     mountPath: /users
+  - name: egress-storage
+    mountPath: /egress
 
 podLabels:
   hub.jupyter.org/network-access-hub: "true"

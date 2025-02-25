@@ -88,11 +88,10 @@ Deploy the JupyterHub Guacamole handler which allows JupyterHub to create Guacam
 helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-generic-webservice/ guacamolehandler generic-webservice -f guacamolehandler.yaml --wait
 ```
 
-Create an NFS volume for user home and project directories using the NFS provisioner
+Create an NFS volumes for user home, project, and user egress directories using the NFS provisioner
 
 ```
-kubectl apply -f user-home-directories-pvc.yaml
-kubectl apply -f project-directories-pvc.yaml
+kubectl apply -f filesystem-directories-pvc.yaml
 ```
 
 Deploy JupyterHub Airlock which provides a basic interface to requested outputs

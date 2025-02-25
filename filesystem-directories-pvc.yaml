@@ -1,0 +1,51 @@
+# A shared volume for user home directories
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: user-home-directories
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+# A shared volume for project directories
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: project-directories
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+# A shared volume for user egress directories
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: user-egress-directories
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+# The directories where requested egresses are copied to
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airlock-egress-directories
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi

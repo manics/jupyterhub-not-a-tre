@@ -110,8 +110,9 @@ hub:
       project_group_re = r"^project-[a-z0-9-]+$"
       egress_admin_groupname = "egress-admins"
       user_home_pvcname = "user-home-directories"
+      user_egress_pvcname = "user-egress-directories"
       project_pvcname = "project-directories"
-      egress_pvcname = "airlock"
+      egress_pvcname = "airlock-egress-directories"
 
       # https://discourse.jupyter.org/t/tailoring-spawn-options-and-server-configuration-to-certain-users/8449
       async def custom_options_form(spawner):
@@ -141,6 +142,12 @@ hub:
                                       "claimName": project_pvcname,
                                   }
                               },
+                              "egress": {
+                                  "name": "egress",
+                                  "persistentVolumeClaim": {
+                                      "claimName": user_egress_pvcname,
+                                  }
+                              },
                           },
                           "volume_mounts": {
                               "home": {
@@ -150,8 +157,13 @@ hub:
                               },
                               "project": {
                                   "name": "project",
-                                  "mountPath": f"/home/ubuntu/project",
+                                  "mountPath": f"/home/ubuntu/{groupname}",
                                   "subPath": groupname,
+                              },
+                              "egress": {
+                                  "name": "egress",
+                                  "mountPath": f"/home/ubuntu/egress",
+                                  "subPath": username,
                               },
                           },
                       },
