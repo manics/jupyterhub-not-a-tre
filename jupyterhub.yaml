@@ -106,6 +106,7 @@ hub:
 
     12-user-group-options-form: |
       import re
+      from tornado.web import HTTPError
 
       project_group_re = r"^project-[a-z0-9-]+$"
       egress_admin_groupname = "egress-admins"
@@ -153,7 +154,7 @@ hub:
                               "home": {
                                   "name": "home",
                                   "mountPath": f"/home/ubuntu",
-                                  "subPath": username,
+                                  "subPath": f"{groupname}/{username}",
                               },
                               "project": {
                                   "name": "project",
@@ -163,7 +164,7 @@ hub:
                               "egress": {
                                   "name": "egress",
                                   "mountPath": f"/home/ubuntu/egress",
-                                  "subPath": username,
+                                  "subPath": f"{groupname}/{username}",
                               },
                           },
                       },
@@ -194,7 +195,7 @@ hub:
                               "home": {
                                   "name": "home",
                                   "mountPath": f"/home/ubuntu",
-                                  "subPath": username,
+                                  "subPath": f"{groupname}/{username}",
                               },
                               "egress-review": {
                                   "name": "egress-review",
@@ -205,11 +206,8 @@ hub:
                       },
                   })
 
-          # Let KubeSpawner inspect profile_list and decide what to return, it
-          # will return a falsy blank string if there is no profile_list,
-          # which makes no options form be presented.
-          #
-          # ref: https://github.com/jupyterhub/kubespawner/blob/37a80abb0a6c826e5c118a068fa1cf2725738038/kubespawner/spawner.py#L1885-L1935
+          if not spawner.profile_list:
+              raise HTTPError(500, "No profiles found")
           return spawner._options_form_default()
 
       # Don't forget to ask KubeSpawner to make use of this custom hook
