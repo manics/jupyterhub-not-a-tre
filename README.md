@@ -5,7 +5,8 @@
 ### Kubernetes, Helm, Host system
 
 This is only tested with a [default K3s Kubernetes installation](https://docs.k3s.io/quick-start) that includes a default Traefik ingress and local storage provisioner.
-Change the file permissions on `/etc/rancher/k3s/k3s.yaml` if needed so that
+
+Check that
 
 ```
 kubectl get nodes
@@ -14,6 +15,8 @@ kubectl get nodes
 works.
 
 You must also [install Helm](https://helm.sh/docs/intro/install/).
+
+If you like living on the edge run `curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode=0644` and `curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash`
 
 Your host system must support mounting NFS (the executable `mount.nfs` should exist):
 
@@ -26,11 +29,13 @@ sudo apt install -y -q nfs-common
 
 You must change the ingress hosts before deploying.
 
-Do a global search and replace in all files to replace `penguin.example.org` with your hostname. If you only have an IP use `ip1.ip2.ip3.ip4.nip.io`:
+Do a global search and replace in all files to replace `penguin.example.org` with your hostname:
 
 - `guacamole.yaml`
 - `guacamolehandler.yaml`
 - `jupyterhub.yaml`
+
+If you only have an IP use `ip1.ip2.ip3.ip4.nip.io`, e.g. `sed -i -re "s/penguin.example.org/ip1.ip2.ip3.ip4.nip.io/" *.yaml`.
 
 ## Optional configuration
 
@@ -41,7 +46,7 @@ If you are using the default K3s setup you _should_ be able to skip this section
 A CoreDNS deployment independent of the cluster DNS is run in the same namespace as the user pods to prevent DNS leakage.
 Since the IP of this DNS server must be used to be configure the pods you should hard-code it.
 
-It is currently set to `10.43.0.11`, corresponding to the start of the default K3s service CIDR.
+It is currently set to `10.43.0.11`, corresponding to near the start of the default K3s service CIDR.
 If necessary do a global search and replace in all files, changing `10.43.0.11` to whatever your chosen DNS clusterIP is.
 
 - `coredns.yaml`
@@ -138,10 +143,10 @@ This is very much a work in progress!
 
 - [ ] Airlock/egress interface is extremely basic
 - [ ] Airlock/egress doesn't have a separate API
+- [ ] Airlock/egress doesn't have a database, it just uses the presence of files
 - [ ] Has not been tested for security!
 - [ ] K3s network policies are not complete, should probably replace with Calico
 - [ ] API tokens are insecure and are hardcoded in the example configuration
 - [ ] Workspaces connections are protected by network rules, not passwords
-- [ ] User home and egress directories are not segregated by project
 - [ ] A user can only run one workspace in one project at a time
 - [ ] Helm chart and containers versions are not pinned
