@@ -48,8 +48,12 @@ hub:
       storageClassName: nfs
   baseUrl: /jupyter
 
+  extraEnv:
+    GUACAMOLE_CONNECTION_TYPE: rdp
   extraConfig:
     10-modify-pod: |
+      import os
+      connection = os.getenv("GUACAMOLE_CONNECTION_TYPE")
       def modify_pod_hook(spawner, pod):
           # First container is static-redirector, move user volume to user container
           pod.spec.containers[1].volume_mounts = pod.spec.containers[0].volume_mounts
@@ -60,13 +64,12 @@ hub:
           pod.spec.containers[0].lifecycle = None
 
           chosen_profile = spawner.user_options.get("profile", "")
-          # if chosen_profile == "vnc":
-          #     pod.spec.containers[1].command = ["start-tigervnc.sh"]
-          # elif chosen_profile == "rdp":
-          #     pod.spec.containers[1].command = ["start-xrdp.sh"]
-          # else:
-          #     raise ValueError(f"Invalid profile: {chosen_profile}")
-          pod.spec.containers[1].command = ["start-xrdp.sh"]
+          if connection == "vnc":
+              pod.spec.containers[1].command = ["start-tigervnc.sh"]
+          elif connection == "rdp":
+              pod.spec.containers[1].command = ["start-xrdp.sh"]
+          else:
+              raise ValueError(f"Invalid connection: {connection}")
           spawner.log.info(f"{chosen_profile=} {pod.spec.containers[1].command=}")
           return pod
       c.KubeSpawner.modify_pod_hook = modify_pod_hook
@@ -105,8 +108,11 @@ hub:
       c.JupyterHub.spawner_class = KubeSpawnerGuac
 
     12-user-group-options-form: |
+      import os
       import re
       from tornado.web import HTTPError
+
+      connection = os.getenv("GUACAMOLE_CONNECTION_TYPE")
 
       project_group_re = r"^project-[a-z0-9-]+$"
       egress_admin_groupname = "egress-admins"
@@ -129,7 +135,7 @@ hub:
                       "display_name": groupname,
                       "slug": groupname,
                       "kubespawner_override": {
-                          "connection": "rdp",
+                          "connection": connection,
                           "volumes": {
                               "home": {
                                   "name": "home",
@@ -176,7 +182,7 @@ hub:
                       "display_name": groupname,
                       "slug": groupname,
                       "kubespawner_override": {
-                          "connection": "rdp",
+                          "connection": connection,
                           "volumes": {
                               "home": {
                                   "name": "home",
@@ -281,11 +287,13 @@ singleuser:
     blockWithIptables: false
   extraEnv:
     STATIC_REDIRECTOR_DESTINATION: http://penguin.example.org/jupyter/services/guacamole/
+    STATIC_REDIRECTOR_AUTOREDIRECT: "true"
   extraContainers:
     - name: ubuntu-mate
       image: ghcr.io/manics/ubuntu-mate-vncrdp:main
       command:
-        - start-xrdp.sh
+        # Set by modify_pod_hook
+        - "false"
       ports:
         - containerPort: 3389
           name: rdp
@@ -338,19 +346,6 @@ singleuser:
             protocol: TCP
           - port: 5901
             protocol: TCP
-
-  # Testing additional connection metadata
-  # profileList:
-  #   - display_name: "RDP"
-  #     description: "RDP connection"
-  #     kubespawner_override:
-  #       connection: "rdp"
-  #     # Defines the default profile - only use for one profile
-  #     default: true
-  #   - display_name: "VNC"
-  #     description: "VNC connection"
-  #     kubespawner_override:
-  #       connection: "vnc"
 
   lifecycleHooks:
     postStart:
