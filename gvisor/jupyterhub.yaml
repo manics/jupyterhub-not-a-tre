@@ -1,0 +1,9 @@
+# helm upgrade --install jupyterhub --repo=https://hub.jupyter.org/helm-chart/ jupyterhub -f jupyterhub.yaml -f gvisor/jupyterhub.yaml --wait
+
+hub:
+  config:
+    KubeSpawner:
+      extra_pod_config:
+        runtimeClassName: gvisor
+  extraEnv:
+    GUACAMOLE_CONNECTION_TYPE: vnc

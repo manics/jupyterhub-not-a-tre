@@ -2,6 +2,7 @@
 # Extract and run fenced codeblocks from a markdown file
 
 from argparse import ArgumentParser
+from os import getenv
 from subprocess import run
 
 parser = ArgumentParser(description="Extract fenced codeblocks from a markdown file")
@@ -32,4 +33,8 @@ with open(args.input) as f:
 for c in code:
     print(f"Running {c}", flush=True)
     if args.run:
+        if getenv("CI"):
+            print(f"::group::{c}", flush=True)
         run(c, shell=True, check=True)
+        if getenv("CI"):
+            print("::endgroup::", flush=True)
