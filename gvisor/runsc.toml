@@ -1,0 +1,11 @@
+# https://github.com/k3s-io/k3s/issues/3378
+# https://gvisor.dev/docs/user_guide/containerd/configuration/
+# /etc/containerd/runsc.toml
+
+log_level = "debug"
+log_path = "/var/log/runsc/%ID%/shim.log"
+
+[runsc_config]
+#  net-raw = "true"
+  debug = "true"
+  debug-log = "/var/log/runsc/%ID%/gvisor.%COMMAND%.log"

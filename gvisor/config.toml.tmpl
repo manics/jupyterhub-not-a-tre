@@ -1,0 +1,12 @@
+{{ template "base" . }}
+
+[plugins."io.containerd.runtime.v1.linux"]
+  shim_debug = true
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runsc]
+  runtime_type = "io.containerd.runsc.v1"
+
+# https://gvisor.dev/docs/user_guide/containerd/configuration/
+
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runsc.options]
+  TypeUrl = "io.containerd.runsc.v1.options"
+  ConfigPath = "/etc/containerd/runsc.toml"
