@@ -1,8 +1,12 @@
 # helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-guacamole/ guacamole guacamole -f guacamole.yaml --wait
 
 guacamole:
-  secretEnv:
-    JSON_SECRET_KEY: 0123456789abcdef0123456789abcdef
+  env:
+    - name: JSON_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: notatre-secrets
+          key: GUACAMOLE_JSON_SECRET_KEY
 
 # guacd:
 #   podLabels:

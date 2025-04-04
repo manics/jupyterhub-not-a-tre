@@ -81,10 +81,22 @@ Deploy a local CoreDNS server just for user pods.
 helm upgrade --install coredns-restricted --repo=https://coredns.github.io/helm/ coredns -f coredns.yaml --wait
 ```
 
+Edit and create shared secret tokens:
+
+```
+kubectl apply -f secrets.yaml
+```
+
 Deploy Apache Guacamole to provide the virtual desktop interface to user pods.
 
 ```
 helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-guacamole/ guacamole guacamole -f guacamole.yaml --wait
+```
+
+Deploy JupyterHub
+
+```
+helm upgrade --install jupyterhub --repo=https://hub.jupyter.org/helm-chart/ jupyterhub -f jupyterhub.yaml --set-file hub.extraConfig.10-notatre=jupyterhub_extraconfig.py --wait
 ```
 
 Deploy the JupyterHub Guacamole handler which allows JupyterHub to create Guacamole VDI sessions
@@ -103,12 +115,6 @@ Deploy JupyterHub Airlock which provides a basic interface to requested outputs
 
 ```
 helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-generic-webservice/ airlock generic-webservice -f airlock.yaml --wait
-```
-
-Deploy JupyterHub
-
-```
-helm upgrade --install jupyterhub --repo=https://hub.jupyter.org/helm-chart/ jupyterhub -f jupyterhub.yaml --set-file hub.extraConfig.10-notatre=jupyterhub_extraconfig.py --wait
 ```
 
 ## Login
@@ -146,7 +152,6 @@ This is very much a work in progress!
 - [ ] Airlock/egress doesn't have a database, it just uses the presence of files
 - [ ] Has not been tested for security!
 - [ ] K3s network policies are not complete, should probably replace with Calico
-- [ ] API tokens are insecure and are hardcoded in the example configuration
 - [ ] Workspaces connections are protected by network rules, not passwords
 - [ ] A user can only run one workspace in one project at a time
 - [ ] Helm chart and containers versions are not pinned

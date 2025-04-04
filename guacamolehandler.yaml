@@ -16,25 +16,27 @@ args:
 service:
   port: 8040
 
+envDict:
+  GUACAMOLE_HOST: "http://guacamole:8080"
+  GUACAMOLE_PUBLIC_HOST: "http://penguin.example.org"
+  JUPYTERHUB_API_URL: http://hub:8081/jupyter/hub/api
+  JUPYTERHUB_BASE_URL: /jupyter
+  JUPYTERHUB_CLIENT_ID: service-guacamole
+  JUPYTERHUB_SERVICE_PREFIX: /jupyter/services/guacamole
+  # JUPYTERHUB_SERVICE_NAME: guacamole
+
 env:
+  # Secrets
   - name: JSON_SECRET_KEY
-    value: 0123456789abcdef0123456789abcdef
-  - name: GUACAMOLE_HOST
-    value: "http://guacamole:8080"
-  - name: GUACAMOLE_PUBLIC_HOST
-    value: "http://penguin.example.org"
+    valueFrom:
+      secretKeyRef:
+        name: notatre-secrets
+        key: GUACAMOLE_JSON_SECRET_KEY
   - name: JUPYTERHUB_API_TOKEN
-    value: guacamole-fedcba9876543210fedcba9876543210
-  - name: JUPYTERHUB_API_URL
-    value: http://hub:8081/jupyter/hub/api
-  - name: JUPYTERHUB_BASE_URL
-    value: /jupyter
-  - name: JUPYTERHUB_CLIENT_ID
-    value: service-guacamole
-  - name: JUPYTERHUB_SERVICE_PREFIX
-    value: /jupyter/services/guacamole
-  # - name: JUPYTERHUB_SERVICE_NAME
-  #   value: guacamole
+    valueFrom:
+      secretKeyRef:
+        name: hub
+        key: hub.services.guacamole.apiToken
 
 nameOverride: guacamolehandler
 

@@ -16,8 +16,6 @@ service:
   port: 8041
 
 env:
-  - name: JUPYTERHUB_API_TOKEN
-    value: airlock-fedcba9876543210fedcba9876543210
   - name: JUPYTERHUB_API_URL
     value: http://hub:8081/jupyter/hub/api
   - name: JUPYTERHUB_BASE_URL
@@ -28,6 +26,13 @@ env:
     value: airlock
   - name: JUPYTERHUB_SERVICE_PREFIX
     value: /jupyter/services/airlock
+
+  # Secrets
+  - name: JUPYTERHUB_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: hub
+        key: hub.services.airlock.apiToken
 
 nameOverride: airlock
 
