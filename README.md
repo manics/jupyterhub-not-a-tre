@@ -108,7 +108,7 @@ helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-generic
 Deploy JupyterHub
 
 ```
-helm upgrade --install jupyterhub --repo=https://hub.jupyter.org/helm-chart/ jupyterhub -f jupyterhub.yaml --wait
+helm upgrade --install jupyterhub --repo=https://hub.jupyter.org/helm-chart/ jupyterhub -f jupyterhub.yaml --set-file hub.extraConfig.10-notatre=jupyterhub_extraconfig.py --wait
 ```
 
 ## Login
