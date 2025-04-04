@@ -15,6 +15,8 @@ hub:
           users:
             - user-1
             - user-2
+      # Shutdown a user's server if they logout of JupyterHub
+      shutdown_on_logout: true
     Authenticator:
       admin_users:
         - admin
