@@ -62,9 +62,14 @@ jobs:
       #     cd ${{ matrix.test }}
       #     pytest --browser firefox --base-url "http://$K8S_HOSTNAME"
 
-      - name: Get logs, including on failure
+      - name: Get summary of objects and pod logs, including on failure
         if: always()
         run: |
+          for obj in pv pvc; do
+            echo "::group::$obj"
+            kubectl get $obj
+            echo "::endgroup::"
+          done
           for name in $(kubectl get statefulset --output=jsonpath="{.items[*]['metadata.name']}"); do
             echo "::group::${name}"
             kubectl logs statefulset/$name
