@@ -9,7 +9,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi
+      storage: 2Gi
 ---
 # A shared volume for project directories
 apiVersion: v1
@@ -22,7 +22,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi
+      storage: 2Gi
 ---
 # A shared volume for user egress directories
 apiVersion: v1
@@ -35,7 +35,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi
+      storage: 2Gi
 ---
 # The directories where requested egresses are copied to
 apiVersion: v1
@@ -48,4 +48,4 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi
+      storage: 2Gi

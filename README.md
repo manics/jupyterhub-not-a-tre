@@ -105,7 +105,7 @@ Deploy the JupyterHub Guacamole handler which allows JupyterHub to create Guacam
 helm upgrade --install --repo=https://www.manicstreetpreacher.co.uk/helm-generic-webservice/ guacamolehandler generic-webservice -f guacamolehandler.yaml --wait
 ```
 
-Create an NFS volumes for user home, project, and user egress directories using the NFS provisioner
+Create an NFS volumes for user home, project, and user egress directories using the NFS provisioner. Edit [`filesystem-directories-pvc.yaml`](filesystem-directories-pvc.yaml) to increase the storage quotas.
 
 ```
 kubectl apply -f filesystem-directories-pvc.yaml
